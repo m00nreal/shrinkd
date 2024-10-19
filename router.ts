@@ -8,8 +8,8 @@ async function router(req: Request): Promise<Response> {
     .with("/", () => {
       return new Response("hello bun");
     })
-    .with("/register", AuthController.register)
-    .with("/login", AuthController.login)
+    .with("/register", () => AuthController.register(req))
+    .with("/login", () => AuthController.login(req))
     .with("/optimize", () => ImageController.optimize(req))
     .otherwise(() => new Response("not implemented!"));
 }
