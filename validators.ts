@@ -1,18 +1,18 @@
 import sharp from "sharp";
 import { z } from "zod";
 
-type formats = keyof sharp.FormatEnum;
+type Formats = keyof sharp.FormatEnum;
 
 const CompressionRequestParams = z.object({
   imgUrl: z.string(),
-  w: z.number({ coerce: true }).optional(),
-  h: z.number({ coerce: true }).optional(),
-  q: z
+  width: z.number({ coerce: true }).optional(),
+  height: z.number({ coerce: true }).optional(),
+  quality: z
     .number()
     .max(1, "Select a value between 30 and 100")
     .min(0.3, "Minimum value is 30")
     .optional(),
-  f: z.custom<formats>(
+  format: z.custom<Formats>(
     (format) => {
       return format in sharp.format ? true : false;
     },
