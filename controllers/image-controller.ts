@@ -1,5 +1,5 @@
 import { compress } from "../compression";
-import { saveImage } from "../storage";
+import { saveImage } from "../services/storage";
 import { getParamsAsObject, CompressionRequestParams } from "../validators";
 
 function createImageController() {

@@ -1,13 +1,14 @@
 import { Hono } from "hono";
+import { jwt, type JwtVariables } from "hono/jwt";
+import { logger } from "hono/logger";
+import { Jwt } from "hono/utils/jwt";
 import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { match, P } from "ts-pattern";
-import { apiRouter } from "./router";
+import { apiRouter } from "./api";
 import AuthService from "./services/auth-service";
 import { RegisterSchema } from "./validators";
-import { logger } from "hono/logger";
-import { jwt, type JwtVariables } from "hono/jwt";
-import { Jwt } from "hono/utils/jwt";
+import { getImages } from "./services/storage";
 
 const TOKEN_EXPIRATION_IN_MINUTES = 30;
 
@@ -43,6 +44,7 @@ app.post("/register", async (c) => {
 });
 
 app.post("/login", async (c) => {
+  await getImages();
   const formData = await c.req.formData();
   const { data: user, success } = RegisterSchema.safeParse({
     username: formData.get("username"),
