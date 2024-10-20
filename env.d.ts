@@ -5,5 +5,6 @@ declare module "bun" {
     PORT: string;
     BUCKET_ID: string;
     SUPABASE_URL: string;
+    SECRET: string;
   }
 }

@@ -1,17 +1,14 @@
-import { match } from "ts-pattern";
-import AuthController from "./controllers/auth-controller";
-import ImageController from "./controllers/image-controller";
+import { Hono } from "hono";
 
-async function router(req: Request): Promise<Response> {
-  const url = new URL(req.url);
-  return match(url.pathname)
-    .with("/", () => {
-      return new Response("hello bun");
-    })
-    .with("/register", () => AuthController.register(req))
-    .with("/login", () => AuthController.login(req))
-    .with("/optimize", () => ImageController.optimize(req))
-    .otherwise(() => new Response("not implemented!"));
-}
+export const apiRouter = new Hono();
 
-export { router };
+apiRouter.post("/optimize", (c) => {
+  return c.json({ message: "optimized!" });
+});
+
+apiRouter.get("/hello", (c) => {
+  const payload = c.get("jwtPayload");
+  return c.json({
+    message: "Hello!" + payload.username,
+  });
+});
