@@ -7,9 +7,8 @@ import { mkdir } from "node:fs/promises";
 import { match, P } from "ts-pattern";
 import { apiRouter } from "./api";
 import AuthService from "./services/auth-service";
-import { RegisterSchema } from "./validators";
-import { getImages } from "./services/storage";
 import { doSetup } from "./sqlite";
+import { RegisterSchema } from "./validators";
 
 const TOKEN_EXPIRATION_IN_MINUTES = 30;
 
@@ -46,7 +45,6 @@ app.post("/register", async (c) => {
 });
 
 app.post("/login", async (c) => {
-  await getImages();
   const formData = await c.req.formData();
   const { data: user, success } = RegisterSchema.safeParse({
     username: formData.get("username"),
@@ -54,7 +52,7 @@ app.post("/login", async (c) => {
   });
 
   if (!success) {
-    return c.newResponse("Bad Request");
+    return c.json({ error: "Username and password required" }, 400);
   }
 
   // TODO: identify error type: user does not exist | user credentials does not match

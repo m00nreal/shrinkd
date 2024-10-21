@@ -1,4 +1,5 @@
 import { Database } from "bun:sqlite";
+import { P } from "ts-pattern";
 
 type User = {
   username: string;
@@ -10,7 +11,6 @@ interface UserRepository {
   exist(u: string): Promise<boolean>;
   getByUsername(username: string): User | Error;
 }
-
 const UserStore: UserRepository = {
   async save(u: User) {
     const db = Database.open(Bun.env.DATABASE_NAME);
@@ -33,9 +33,7 @@ const UserStore: UserRepository = {
     );
     const user = query.get(username);
     db.close();
-    if (!user) {
-      return new Error("User does not exist");
-    }
+    if (!user) return new Error("could not get user");
     return user as User;
   },
 };
