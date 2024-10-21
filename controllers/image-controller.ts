@@ -2,6 +2,7 @@ import { compress } from "../compression";
 import { saveImage } from "../services/storage";
 import { getParamsAsObject, CompressionRequestParams } from "../validators";
 
+// TODO: refactor
 function createImageController() {
   async function optimize(req: Request) {
     const url = new URL(req.url);

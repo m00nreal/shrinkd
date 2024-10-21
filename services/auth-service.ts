@@ -1,64 +1,72 @@
-type RegisteredUser = {
-  username: string;
-  hashedPassword: string;
-};
+import { Database } from "bun:sqlite";
 
 type User = {
   username: string;
   password: string;
 };
 
-export const users: Record<string, RegisteredUser> = {};
+interface UserRepository {
+  save(u: User): Promise<boolean>;
+  exist(u: string): Promise<boolean>;
+  getByUsername(username: string): User | Error;
+}
 
-// todo: implement DI - arg for creating the service should be an interface with operations attached to it
-// it will facilitate mocking operations during testing
-// todo 2: implement persistent storage
-function CreateAuthService() {
-  async function register({ username, password }: User) {
-    if (users[username]) {
-      return new Error("username is not available");
+const UserStore: UserRepository = {
+  async save(u: User) {
+    const db = Database.open(Bun.env.DATABASE_NAME);
+    db.run(
+      `INSERT INTO users(username, password) VALUES("${u.username}", "${u.password}");`,
+    );
+    return true;
+  },
+  async exist(u: string) {
+    const db = Database.open(Bun.env.DATABASE_NAME);
+    const result =
+      db.query(`SELECT * FROM users WHERE username = "${u}";`).get() !== null;
+    db.close();
+    return result;
+  },
+  getByUsername(username: string) {
+    const db = Database.open(Bun.env.DATABASE_NAME);
+    const query = db.prepare(
+      `SELECT id, username, password FROM users WHERE username = ?`,
+    );
+    const user = query.get(username);
+    db.close();
+    if (!user) {
+      return new Error("User does not exist");
+    }
+    return user as User;
+  },
+};
+
+function CreateAuthService(store: UserRepository) {
+  async function createUser({ username, password }: User) {
+    const exists = await store.exist(username);
+
+    if (exists) {
+      return new Error("Username not available");
     }
 
     const hashedPassword = await Bun.password.hash(password);
-    const createdAt = Date.now().toString();
-    users[username] = {
-      username: username,
-      hashedPassword: hashedPassword,
-    };
+
+    await store.save({ username, password: hashedPassword });
 
     return {
       username,
-      createdAt,
     };
   }
 
-  async function login({ username, password }: User) {
-    const user = users[username];
-
-    if (!user) {
-      return new Error("Username does not exist");
-    }
-
-    const validCredentials = await Bun.password.verify(
-      password,
-      user.hashedPassword,
-    );
-
-    if (!validCredentials) {
-      return new Error("Invalid password");
-    }
-
-    return {
-      username: user.username,
-    };
+  async function getByUsername(username: string) {
+    const exists = store.getByUsername(username);
+    return exists;
   }
 
   return {
-    register,
-    login,
+    createUser,
+    getByUsername,
   };
 }
-
-const AuthService = CreateAuthService();
+const AuthService = CreateAuthService(UserStore);
 
 export default AuthService;

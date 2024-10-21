@@ -6,5 +6,6 @@ declare module "bun" {
     BUCKET_ID: string;
     SUPABASE_URL: string;
     SECRET: string;
+    DATABASE_NAME: string;
   }
 }

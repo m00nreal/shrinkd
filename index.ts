@@ -9,6 +9,7 @@ import { apiRouter } from "./api";
 import AuthService from "./services/auth-service";
 import { RegisterSchema } from "./validators";
 import { getImages } from "./services/storage";
+import { doSetup } from "./sqlite";
 
 const TOKEN_EXPIRATION_IN_MINUTES = 30;
 
@@ -21,6 +22,7 @@ const app = new Hono<{ Variables: Variables }>();
 
 app.use(logger());
 app.use("/api/*", jwt({ secret: Bun.env.SECRET }));
+doSetup();
 
 app.route("/api", apiRouter);
 app.post("/register", async (c) => {
@@ -34,7 +36,7 @@ app.post("/register", async (c) => {
     return c.newResponse("Bad Request", { status: 400 });
   }
 
-  const actualUser = await AuthService.register(user);
+  const actualUser = await AuthService.createUser(user);
 
   return match(actualUser)
     .with(P.instanceOf(Error), () =>
@@ -55,22 +57,34 @@ app.post("/login", async (c) => {
     return c.newResponse("Bad Request");
   }
 
-  const actualUser = await AuthService.login(user);
+  // TODO: identify error type: user does not exist | user credentials does not match
+  const actualUser = await AuthService.getByUsername(user.username);
+  if (actualUser instanceof Error) {
+    return c.json({ error: "Could not find user" }, 400);
+  }
+
+  const validCredentials = await Bun.password.verify(
+    user.password,
+    actualUser.password,
+  );
+
+  if (!validCredentials) {
+    return c.json({ error: "Wrong credentials" }, 400);
+  }
+
   return match(actualUser)
     .with(P.instanceOf(Error), () =>
       c.json({ error: "Invalid credentials" }, 400),
     )
-    .otherwise(async ({ username }) => {
+    .otherwise(async () => {
       const token = await Jwt.sign(
         {
-          username,
           exp: Math.floor(Date.now() / 1000) + 60 * TOKEN_EXPIRATION_IN_MINUTES,
         },
         Bun.env.SECRET,
       );
       return c.json(
         {
-          username,
           access_token: token,
           expires_in: 60 * TOKEN_EXPIRATION_IN_MINUTES,
         },

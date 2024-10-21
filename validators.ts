@@ -3,7 +3,7 @@ import { z } from "zod";
 
 type Formats = keyof sharp.FormatEnum;
 
-const CompressionRequestParams = z.object({
+export const CompressionRequestParams = z.object({
   imgUrl: z.string(),
   width: z.number({ coerce: true }).optional(),
   height: z.number({ coerce: true }).optional(),
@@ -32,7 +32,7 @@ export const RegisterSchema = z.object({
 
 export type AuthRequest = z.infer<typeof RegisterSchema>;
 
-const getParamsAsObject = (params: URLSearchParams): any => {
+export const getParamsAsObject = (params: URLSearchParams): any => {
   let qp = {};
   for (let [k, v] of params.entries()) {
     qp = { ...qp, [k]: v };
@@ -41,10 +41,4 @@ const getParamsAsObject = (params: URLSearchParams): any => {
   return qp;
 };
 
-const toBase64 = (fileBuffer: ArrayBuffer) => {
-  const binary = String.fromCharCode(...new Uint8Array(fileBuffer));
-  return btoa(binary);
-};
-
 export type CompressOptions = z.infer<typeof CompressionRequestParams>;
-export { CompressionRequestParams, getParamsAsObject, toBase64 };
